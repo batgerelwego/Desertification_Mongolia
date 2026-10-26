@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ЦөлжилтАИ — Хяналтын Систем</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&family=Noto+Sans+Mongolian&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sand: #c8a96e;
+    --rust: #b84a2c;
+    --olive: #7a8c3c;
+    --green: #3d7a45;
+    --sky: #4a9fb5;
+    --dark: #0d0f0b;
+    --panel: #141710;
+    --border: #2a2e1f;
+    --text: #d4cdb5;
+    --muted: #7a7060;
+    --alert: #e05c2a;
+    --safe: #4aaa5c;
+    --warn: #d4a02a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(200,169,110,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(61,122,69,0.05) 0%, transparent 50%);
+  }
+
+  /* SCANLINE EFFECT */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(13,15,11,0.9);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    position: relative;
+  }
+
+  .logo-icon svg { width: 100%; height: 100%; }
+
+  .logo-text h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--sand);
+    text-shadow: 0 0 20px rgba(200,169,110,0.4);
+  }
+
+  .logo-text p {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-weight: 300;
+  }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border: 1px solid var(--alert);
+    border-radius: 2px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--alert);
+    animation: pulse-border 2s infinite;
+  }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: var(--alert); box-shadow: 0 0 0 rgba(224,92,42,0); }
+    50% { border-color: #ff7a50; box-shadow: 0 0 8px rgba(224,92,42,0.4); }
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--alert);
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  .header-time {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
+  /* MAIN LAYOUT */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 280px;
+    grid-template-rows: auto 1fr;
+    min-height: calc(100vh - 73px);
+  }
+
+  /* SIDEBAR LEFT */
+  .sidebar-left {
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .section-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* RISK ZONES */
+  .zone-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .zone-item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+
+  .zone-item.critical::before { background: var(--alert); }
+  .zone-item.high::before { background: var(--warn); }
+  .zone-item.moderate::before { background: var(--sky); }
+  .zone-item.low::before { background: var(--safe); }
+
+  .zone-item:hover {
+    background: rgba(200,169,110,0.05);
+    border-color: var(--sand);
+  }
+
+  .zone-item.active {
+    background: rgba(200,169,110,0.08);
+    border-color: var(--sand);
+  }
+
+  .zone-info { flex: 1; }
+  .zone-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .zone-sub { font-size: 10px; color: var(--muted); letter-spacing: 1px; margin-top: 2px; }
+
+  .zone-risk {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .zone-risk.critical { color: var(--alert); }
+  .zone-risk.high { color: var(--warn); }
+  .zone-risk.moderate { color: var(--sky); }
+  .zone-risk.low { color: var(--safe); }
+
+  /* SENSOR GRID */
+  .sensor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .sensor-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .sensor-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--sand);
+    line-height: 1;
+    margin: 4px 0;
+  }
+
+  .sensor-val.warn { color: var(--warn); }
+  .sensor-val.alert { color: var(--alert); }
+  .sensor-val.ok { color: var(--safe); }
+
+  .sensor-unit { font-size: 9px; color: var(--muted); letter-spacing: 2px; }
+  .sensor-label { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+  /* CENTER - MAP */
+  .center-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* TAB NAV */
+  .tab-nav {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+
+  .tab-btn {
+    padding: 14px 20px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+  }
+
+  .tab-btn.active {
+    color: var(--sand);
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 1px;
+    background: var(--sand);
+    box-shadow: 0 0 8px rgba(200,169,110,0.5);
+  }
+
+  .tab-content { flex: 1; padding: 24px; overflow: auto; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* SATELLITE MAP */
+  .map-container {
+    position: relative;
+    background: #0a0c09;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    height: 420px;
+    overflow: hidden;
+  }
+
+  .map-svg { width: 100%; height: 100%; }
+
+  .map-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    fill: var(--muted);
+  }
+
+  .map-overlay {
+    position: absolute;
+    top: 12px; right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+  }
+
+  /* NDVI CHART */
+  .chart-area {
+    margin-top: 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 16px;
+  }
+
+  .chart-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 100px;
+  }
+
+  canvas#ndviChart { width: 100% !important; }
+
+  /* AI PANEL */
+  .ai-panel {
+    margin-top: 20px;
+    background: var(--panel);
+    border: 1px solid rgba(200,169,110,0.2);
+    border-radius: 2px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ai-panel::before {
+    content: 'AI';
+    position: absolute;
+    right: 16px; top: 12px;
+    font-family: 'Orbitron', monospace;
+    font-size: 32px;
+    font-weight: 900;
+    color: rgba(200,169,110,0.05);
+    letter-spacing: 4px;
+  }
+
+  .ai-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .ai-badge {
+    padding: 3px 10px;
+    background: rgba(200,169,110,0.1);
+    border: 1px solid rgba(200,169,110,0.3);
+    border-radius: 2px;
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--sand);
+  }
+
+  .ai-model-name { font-size: 11px; color: var(--muted); }
+
+  .ai-prompt-area {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .ai-prompt-area select,
+  .ai-prompt-area input {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .ai-prompt-area select:focus,
+  .ai-prompt-area input:focus { border-color: var(--sand); }
+
+  .ai-prompt-area select option { background: var(--panel); }
+
+  .ai-run-btn {
+    padding: 8px 20px;
+    background: linear-gradient(135deg, rgba(200,169,110,0.2), rgba(200,169,110,0.05));
+    border: 1px solid var(--sand);
+    border-radius: 2px;
+    color: var(--sand);
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .ai-run-btn:hover {
+    background: rgba(200,169,110,0.15);
+    box-shadow: 0 0 12px rgba(200,169,110,0.2);
+  }
+
+  .ai-run-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .ai-response {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+    min-height: 80px;
+    position: relative;
+  }
+
+  .ai-response.loading::after {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: var(--sand);
+    animation: cursor-blink 0.8s infinite;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+  }
+
+  @keyframes cursor-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .ai-placeholder { color: var(--muted); font-style: italic; }
+
+  /* SIDEBAR RIGHT */
+  .sidebar-right {
+    border-left: 1px solid var(--border);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+  }
+
+  /* METRICS */
+  .metric-big {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .metric-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1;
+    margin: 6px 0;
+  }
+
+  .metric-num.red { color: var(--alert); text-shadow: 0 0 20px rgba(224,92,42,0.4); }
+  .metric-num.yellow { color: var(--warn); text-shadow: 0 0 20px rgba(212,160,42,0.3); }
+  .metric-num.green { color: var(--safe); text-shadow: 0 0 20px rgba(74,170,92,0.3); }
+
+  .metric-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+  .metric-change { font-size: 11px; margin-top: 4px; }
+  .metric-change.up { color: var(--alert); }
+  .metric-change.down { color: var(--safe); }
+
+  /* ALERT LIST */
+  .alert-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .alert-icon {
+    width: 28px; height: 28px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .alert-icon.crit { background: rgba(224,92,42,0.15); border: 1px solid rgba(224,92,42,0.3); }
+  .alert-icon.warn { background: rgba(212,160,42,0.15); border: 1px solid rgba(212,160,42,0.3); }
+  .alert-icon.info { background: rgba(74,159,181,0.15); border: 1px solid rgba(74,159,181,0.3); }
+
+  .alert-text p { font-size: 12px; color: var(--text); line-height: 1.4; }
+  .alert-text span { font-size: 10px; color: var(--muted); }
+
+  /* PREDICTION BAR */
+  .pred-item {
+    margin-bottom: 12px;
+  }
+
+  .pred-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 11px;
+    color: var(--text);
+  }
+
+  .pred-pct { font-family: 'Orbitron', monospace; font-size: 12px; }
+
+  .pred-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .pred-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* FORECAST TABLE */
+  .forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+
+  .forecast-day {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 8px 4px;
+    text-align: center;
+  }
+
+  .forecast-day .day { font-size: 9px; color: var(--muted); letter-spacing: 1px; margin-bottom: 4px; }
+  .forecast-day .icon { font-size: 18px; margin: 4px 0; }
+  .forecast-day .temp { font-family: 'Orbitron', monospace; font-size: 11px; color: var(--sand); }
+
+  /* PROGRESS RING */
+  .ring-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 8px 0;
+  }
+
+  .ring-svg { transform: rotate(-90deg); }
+
+  /* ANIMATE IN */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .sidebar-left, .center-panel, .sidebar-right {
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .sidebar-right { animation-delay: 0.1s; }
+  .center-panel { animation-delay: 0.05s; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--dark); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* NDVI MAP PULSES */
+  @keyframes zone-pulse {
+    0%,100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  .critical-zone { animation: zone-pulse 2s infinite; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 40 40" fill="none">
+        <polygon points="20,2 38,34 2,34" fill="none" stroke="#c8a96e" stroke-width="1.5" opacity="0.6"/>
+        <circle cx="20" cy="20" r="6" fill="none" stroke="#7a8c3c" stroke-width="1.5"/>
+        <circle cx="20" cy="20" r="2" fill="#c8a96e"/>
+        <line x1="20" y1="2" x2="20" y2="14" stroke="#c8a96e" stroke-width="1" opacity="0.4"/>
+        <line x1="2" y1="34" x2="14" y2="26" stroke="#c8a96e" stroke-width="1" opacity="0.4"/>
+        <line x1="38" y1="34" x2="26" y2="26" stroke="#c8a96e" stroke-width="1" opacity="0.4"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <h1>ЦӨЛЖИЛТ·АИ</h1>
+      <p>Хяналтын Систем · Mongolia v2.4</p>
+    </div>
+  </div>
+  <div class="header-status">
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      ДОХИО ӨНДӨР
+    </div>
+    <div class="header-time" id="clock">—</div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR LEFT -->
+  <div class="sidebar-left">
+    <div>
+      <div class="section-label">Эрсдэлийн Бүс</div>
+      <div class="zone-item critical active" onclick="selectZone(this,'Өмнөговь')">
+        <div class="zone-info">
+          <div class="zone-name">Өмнөговь</div>
+          <div class="zone-sub">NDVI: 0.08 · 342 станц</div>
+        </div>
+        <div class="zone-risk critical">ХУРЦАДМАЛ</div>
+      </div>
+      <div class="zone-item high" onclick="selectZone(this,'Дорноговь')">
+        <div class="zone-info">
+          <div class="zone-name">Дорноговь</div>
+          <div class="zone-sub">NDVI: 0.14 · 218 станц</div>
+        </div>
+        <div class="zone-risk high">ӨНДӨР</div>
+      </div>
+      <div class="zone-item high" onclick="selectZone(this,'Завхан')">
+        <div class="zone-info">
+          <div class="zone-name">Завхан</div>
+          <div class="zone-sub">NDVI: 0.19 · 156 станц</div>
+        </div>
+        <div class="zone-risk high">ӨНДӨР</div>
+      </div>
+      <div class="zone-item moderate" onclick="selectZone(this,'Архангай')">
+        <div class="zone-info">
+          <div class="zone-name">Архангай</div>
+          <div class="zone-sub">NDVI: 0.31 · 89 станц</div>
+        </div>
+        <div class="zone-risk moderate">ДУНД</div>
+      </div>
+      <div class="zone-item high" onclick="selectZone(this,'Говьсүмбэр')">
+        <div class="zone-info">
+          <div class="zone-name">Говьсүмбэр</div>
+          <div class="zone-sub">NDVI: 0.17 · 98 станц</div>
+        </div>
+        <div class="zone-risk high">ӨНДӨР</div>
+      </div>
+      <div class="zone-item low" onclick="selectZone(this,'Хөвсгөл')">
+        <div class="zone-info">
+          <div class="zone-name">Хөвсгөл</div>
+          <div class="zone-sub">NDVI: 0.62 · 44 станц</div>
+        </div>
+        <div class="zone-risk low">БАГА</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Бодит Цаг Мэдрэгч</div>
+      <div class="sensor-grid">
+        <div class="sensor-card">
+          <div class="sensor-unit">°C</div>
+          <div class="sensor-val alert" id="s-temp">34.2</div>
+          <div class="sensor-label">Температур</div>
+        </div>
+        <div class="sensor-card">
+          <div class="sensor-unit">%</div>
+          <div class="sensor-val warn" id="s-hum">12</div>
+          <div class="sensor-label">Чийгшил</div>
+        </div>
+        <div class="sensor-card">
+          <div class="sensor-unit">m/s</div>
+          <div class="sensor-val warn" id="s-wind">8.4</div>
+          <div class="sensor-label">Салхи</div>
+        </div>
+        <div class="sensor-card">
+          <div class="sensor-unit">mm</div>
+          <div class="sensor-val ok" id="s-rain">1.2</div>
+          <div class="sensor-label">Хур тунадас</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Хөрсний Байдал</div>
+      <div class="sensor-grid">
+        <div class="sensor-card">
+          <div class="sensor-unit">%</div>
+          <div class="sensor-val alert" id="s-soil">6</div>
+          <div class="sensor-label">Чийг</div>
+        </div>
+        <div class="sensor-card">
+          <div class="sensor-unit">t/ha</div>
+          <div class="sensor-val warn" id="s-erosion">3.8</div>
+          <div class="sensor-label">Элэгдэл</div>
+        </div>
+        <div class="sensor-card">
+          <div class="sensor-unit">g/kg</div>
+          <div class="sensor-val alert" id="s-org">8.1</div>
+          <div class="sensor-label">Органик</div>
+        </div>
+        <div class="sensor-card">
+          <div class="sensor-unit">pH</div>
+          <div class="sensor-val ok" id="s-ph">7.8</div>
+          <div class="sensor-label">pH</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER PANEL -->
+  <div class="center-panel">
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('map',this)">Зураглал</button>
+      <button class="tab-btn" onclick="switchTab('ai',this)">АИ Шинжилгээ</button>
+      <button class="tab-btn" onclick="switchTab('trend',this)">Чиг Хандлага</button>
+      <button class="tab-btn solar-tab-btn" onclick="switchTab('solar',this)">☀ Нарны Эрчим Хүч</button>
+    </div>
+
+    <div class="tab-content">
+
+      <!-- MAP TAB -->
+      <div class="tab-pane active" id="tab-map">
+        <div class="map-container">
+          <svg class="map-svg" viewBox="0 0 700 400">
+            <!-- Background -->
+            <rect width="700" height="400" fill="#080a07"/>
+
+            <!-- Grid -->
+            <g stroke="#1a1e12" stroke-width="0.5">
+              <line x1="0" y1="80" x2="700" y2="80"/>
+              <line x1="0" y1="160" x2="700" y2="160"/>
+              <line x1="0" y1="240" x2="700" y2="240"/>
+              <line x1="0" y1="320" x2="700" y2="320"/>
+              <line x1="140" y1="0" x2="140" y2="400"/>
+              <line x1="280" y1="0" x2="280" y2="400"/>
+              <line x1="420" y1="0" x2="420" y2="400"/>
+              <line x1="560" y1="0" x2="560" y2="400"/>
+            </g>
+
+            <!-- MONGOLIA ROUGH OUTLINE -->
+            <path d="M80,120 L120,90 L180,85 L240,75 L320,70 L400,80 L460,70 L520,85 L580,90 L620,110 L640,140 L630,180 L610,210 L580,240 L540,260 L500,270 L460,280 L420,300 L380,310 L340,320 L300,310 L260,300 L220,290 L180,270 L140,240 L110,210 L85,180 L80,150 Z"
+              fill="rgba(122,140,60,0.08)" stroke="#2a3020" stroke-width="1.5"/>
+
+            <!-- DESERTIFICATION ZONES - CRITICAL -->
+            <ellipse cx="360" cy="260" rx="110" ry="70" fill="rgba(184,74,44,0.25)" class="critical-zone"/>
+            <ellipse cx="360" cy="260" rx="80" ry="50" fill="rgba(184,74,44,0.35)" class="critical-zone"/>
+            <ellipse cx="360" cy="260" rx="40" ry="25" fill="rgba(184,74,44,0.5)"/>
+
+            <!-- HIGH RISK -->
+            <ellipse cx="480" cy="210" rx="70" ry="50" fill="rgba(212,160,42,0.2)"/>
+            <ellipse cx="200" cy="200" rx="65" ry="45" fill="rgba(212,160,42,0.2)"/>
+
+            <!-- MODERATE -->
+            <ellipse cx="300" cy="160" rx="55" ry="35" fill="rgba(74,159,181,0.12)"/>
+
+            <!-- GOVISUMBER - HIGH RISK (near UB, center-east) -->
+            <ellipse cx="440" cy="195" rx="42" ry="28" fill="rgba(212,160,42,0.22)"/>
+            <ellipse cx="440" cy="195" rx="24" ry="16" fill="rgba(212,160,42,0.32)"/>
+
+            <!-- LOW RISK / GREEN -->
+            <ellipse cx="180" cy="130" rx="50" ry="30" fill="rgba(61,122,69,0.2)"/>
+            <ellipse cx="420" cy="130" rx="40" ry="25" fill="rgba(61,122,69,0.15)"/>
+
+            <!-- SENSOR DOTS -->
+            <g fill="#c8a96e" opacity="0.7">
+              <circle cx="360" cy="260" r="3"/>
+              <circle cx="340" cy="245" r="2"/>
+              <circle cx="380" cy="270" r="2"/>
+              <circle cx="350" cy="275" r="2"/>
+              <circle cx="370" cy="250" r="2"/>
+            </g>
+            <g fill="#d4a02a" opacity="0.6">
+              <circle cx="480" cy="210" r="2.5"/>
+              <circle cx="460" cy="220" r="2"/>
+              <circle cx="200" cy="200" r="2.5"/>
+              <circle cx="215" cy="185" r="2"/>
+              <!-- Govisumber sensors -->
+              <circle cx="440" cy="195" r="2.5"/>
+              <circle cx="428" cy="202" r="2"/>
+              <circle cx="452" cy="188" r="1.5"/>
+            </g>
+            <g fill="#4a9fb5" opacity="0.5">
+              <circle cx="300" cy="160" r="2"/>
+              <circle cx="285" cy="170" r="1.5"/>
+            </g>
+
+            <!-- SATELLITE INDICATOR -->
+            <g transform="translate(580,50)">
+              <circle cx="0" cy="0" r="12" fill="none" stroke="#4a9fb5" stroke-width="0.8" opacity="0.5"/>
+              <circle cx="0" cy="0" r="8" fill="none" stroke="#4a9fb5" stroke-width="0.8" opacity="0.4"/>
+              <circle cx="0" cy="0" r="2" fill="#4a9fb5"/>
+              <line x1="-15" y1="0" x2="15" y2="0" stroke="#4a9fb5" stroke-width="0.6" opacity="0.3"/>
+              <line x1="0" y1="-15" x2="0" y2="15" stroke="#4a9fb5" stroke-width="0.6" opacity="0.3"/>
+            </g>
+
+            <!-- LABELS -->
+            <text x="360" y="295" text-anchor="middle" class="map-label" fill="#e05c2a">ӨМНӨГОВЬ</text>
+            <text x="480" y="235" text-anchor="middle" class="map-label" fill="#d4a02a">ДОРНОГОВЬ</text>
+            <text x="185" y="225" text-anchor="middle" class="map-label" fill="#d4a02a">ЗАВХАН</text>
+            <text x="300" y="185" text-anchor="middle" class="map-label" fill="#4a9fb5">АРХАНГАЙ</text>
+            <text x="175" y="125" text-anchor="middle" class="map-label" fill="#4aaa5c">ХӨВСГӨЛ</text>
+            <text x="440" y="222" text-anchor="middle" class="map-label" fill="#d4a02a">ГОВЬСҮМБЭР</text>
+
+            <!-- CORNER LABELS -->
+            <text x="8" y="18" class="map-label">94°E</text>
+            <text x="670" y="18" class="map-label" text-anchor="end">120°E</text>
+            <text x="8" y="396" class="map-label">41°N</text>
+            <text x="670" y="396" class="map-label" text-anchor="end">52°N</text>
+
+            <!-- ULAANBAATAR MARKER -->
+            <g transform="translate(400,175)">
+              <circle cx="0" cy="0" r="5" fill="none" stroke="#c8a96e" stroke-width="1.5"/>
+              <circle cx="0" cy="0" r="2" fill="#c8a96e"/>
+              <text x="10" y="4" class="map-label" fill="#c8a96e">УБ</text>
+            </g>
+          </svg>
+
+          <div class="map-overlay">
+            <div class="legend-item"><div class="legend-dot" style="background:rgba(184,74,44,0.7)"></div> Хурцадмал</div>
+            <div class="legend-item"><div class="legend-dot" style="background:rgba(212,160,42,0.7)"></div> Өндөр</div>
+            <div class="legend-item"><div class="legend-dot" style="background:rgba(74,159,181,0.7)"></div> Дунд</div>
+            <div class="legend-item"><div class="legend-dot" style="background:rgba(61,122,69,0.7)"></div> Бага</div>
+          </div>
+        </div>
+
+        <div class="chart-area">
+          <div class="chart-title">NDVI ИНДЕКС — СҮҮЛИЙН 12 САР (Өмнөговь)</div>
+          <div class="chart-wrap">
+            <canvas id="ndviChart" height="100"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI TAB -->
+      <div class="tab-pane" id="tab-ai">
+        <div class="ai-panel">
+          <div class="ai-header">
+            <div class="ai-badge">CLAUDE AI</div>
+            <span class="ai-model-name">claude-sonnet-4-20250514 · Цөлжилт Шинжилгээч</span>
+          </div>
+
+          <div class="ai-prompt-area">
+            <select id="aiQuery">
+              <option value="">— Асуулт сонгох —</option>
+              <option value="risk">Өмнөговийн эрсдэлийн дүн шинжилгээ</option>
+              <option value="govisumber">Говьсүмбэр аймгийн шинжилгээ</option>
+              <option value="ndvi">NDVI буурсан шалтгаан тайлбарла</option>
+              <option value="predict">6 сарын цөлжилтийн таамаглал</option>
+              <option value="action">Яаралтай арга хэмжээний зөвлөмж</option>
+              <option value="climate">Уур амьсгалын өөрчлөлтийн нөлөөлөл</option>
+              <option value="satellite">Хиймэл дагуулын өгөгдөл тайлбарла</option>
+            </select>
+            <button class="ai-run-btn" onclick="runAIQuery()" id="aiBtn">▶ ШИНЖЛЭХ</button>
+          </div>
+
+          <div class="ai-response" id="aiResponse">
+            <span class="ai-placeholder">Дээрээс асуулт сонгоод шинжилгээ эхлүүлнэ үү...</span>
+          </div>
+        </div>
+
+        <div style="margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="chart-area">
+            <div class="chart-title">АИ ТААМАГЛАЛ — ЦӨЛ ТЭЛЭЛТ (km²/жил)</div>
+            <canvas id="predChart" height="140"></canvas>
+          </div>
+          <div class="chart-area">
+            <div class="chart-title">УРГАМЛЫН БҮРХЭВЧ ӨӨРЧЛӨЛТ</div>
+            <canvas id="vegChart" height="140"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- TREND TAB -->
+      <div class="tab-pane" id="tab-trend">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="chart-area">
+            <div class="chart-title">ТЕМПЕРАТУРЫН ТРЕНД (°C)</div>
+            <canvas id="tempChart" height="160"></canvas>
+          </div>
+          <div class="chart-area">
+            <div class="chart-title">ХУР ТУНАДАС (mm/жил)</div>
+            <canvas id="rainChart" height="160"></canvas>
+          </div>
+          <div class="chart-area">
+            <div class="chart-title">ЭЛСНИЙ ШУУРГА ДАВТАМЖ</div>
+            <canvas id="stormChart" height="160"></canvas>
+          </div>
+          <div class="chart-area">
+            <div class="chart-title">ХӨРСНИЙ ЧИЙГШИЛ ИНДЕКС</div>
+            <canvas id="soilChart" height="160"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SIDEBAR RIGHT -->
+  <div class="sidebar-right">
+
+    <div>
+      <div class="section-label">Голлох Үзүүлэлт</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div class="metric-big">
+          <div class="metric-label">Цөлжсөн газар</div>
+          <div class="metric-num red">78%</div>
+          <div class="metric-change up">↑ 2.3% энэ жил</div>
+        </div>
+        <div class="metric-big">
+          <div class="metric-label">Алдагдсан хөрс</div>
+          <div class="metric-num yellow">4.2M</div>
+          <div class="metric-change up">га/жил</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">АИ Эрсдэлийн Таамаглал</div>
+      <div class="pred-item">
+        <div class="pred-header">
+          <span>Хөрс хуурайших</span>
+          <span class="pred-pct" style="color:var(--alert)">87%</span>
+        </div>
+        <div class="pred-bar">
+          <div class="pred-fill" style="width:87%;background:linear-gradient(90deg,var(--alert),#ff7a50)"></div>
+        </div>
+      </div>
+      <div class="pred-item">
+        <div class="pred-header">
+          <span>Ургамал алдагдах</span>
+          <span class="pred-pct" style="color:var(--warn)">71%</span>
+        </div>
+        <div class="pred-bar">
+          <div class="pred-fill" style="width:71%;background:linear-gradient(90deg,var(--warn),#f0c040)"></div>
+        </div>
+      </div>
+      <div class="pred-item">
+        <div class="pred-header">
+          <span>Элсний шуурга</span>
+          <span class="pred-pct" style="color:var(--warn)">63%</span>
+        </div>
+        <div class="pred-bar">
+          <div class="pred-fill" style="width:63%;background:linear-gradient(90deg,var(--warn),#f0c040)"></div>
+        </div>
+      </div>
+      <div class="pred-item">
+        <div class="pred-header">
+          <span>Хур тунадас хомс</span>
+          <span class="pred-pct" style="color:var(--sky)">44%</span>
+        </div>
+        <div class="pred-bar">
+          <div class="pred-fill" style="width:44%;background:linear-gradient(90deg,var(--sky),#80d0e8)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">7 Хоногийн Цаг Агаар</div>
+      <div class="forecast-grid">
+        <div class="forecast-day">
+          <div class="day">НЯМ</div>
+          <div class="icon">☀️</div>
+          <div class="temp">34°</div>
+        </div>
+        <div class="forecast-day">
+          <div class="day">ДАВ</div>
+          <div class="icon">🌤️</div>
+          <div class="temp">31°</div>
+        </div>
+        <div class="forecast-day">
+          <div class="day">МЯГ</div>
+          <div class="icon">💨</div>
+          <div class="temp">29°</div>
+        </div>
+        <div class="forecast-day">
+          <div class="day">ЛХА</div>
+          <div class="icon">🌪️</div>
+          <div class="temp">33°</div>
+        </div>
+        <div class="forecast-day">
+          <div class="day">ПҮР</div>
+          <div class="icon">☀️</div>
+          <div class="temp">36°</div>
+        </div>
+        <div class="forecast-day">
+          <div class="day">БАА</div>
+          <div class="icon">🌤️</div>
+          <div class="temp">32°</div>
+        </div>
+        <div class="forecast-day">
+          <div class="day">БЯМ</div>
+          <div class="icon">⛅</div>
+          <div class="temp">28°</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Сүүлийн Дохиолол</div>
+      <div class="alert-item">
+        <div class="alert-icon warn">🟡</div>
+        <div class="alert-text">
+          <p>Говьсүмбэр: NDVI 0.17-д хүрч, өндөр эрсдэлийн босогт ойртлоо</p>
+          <span>09:15 · Мэдрэгч #098</span>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-icon crit">🔴</div>
+        <div class="alert-text">
+          <p>Өмнөговь: NDVI 0.06 болж унав — хурцадмал хэмжээнд хүрлээ</p>
+          <span>08:34 · Мэдрэгч #342</span>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-icon warn">🟡</div>
+        <div class="alert-text">
+          <p>Дорноговь: Хөрсний чийг 8%-иас доош буулаа</p>
+          <span>07:12 · Мэдрэгч #218</span>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-icon warn">🟡</div>
+        <div class="alert-text">
+          <p>Завхан: Элсний шуурга 14:00-д хүлээгдэж байна</p>
+          <span>06:50 · Таамаглал</span>
+        </div>
+      </div>
+      <div class="alert-item">
+        <div class="alert-icon info">🔵</div>
+        <div class="alert-text">
+          <p>Хөвсгөл: Ургамлын бүрхэвч тогтвортой байна</p>
+          <span>05:00 · Хиймэл дагуул</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// CLOCK
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('mn-MN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// SENSOR ANIMATION
+const sensors = {
+  'temp': {el:'s-temp', base:34.2, range:1.5, cls:'alert'},
+  'hum':  {el:'s-hum',  base:12,   range:3,   cls:'warn'},
+  'wind': {el:'s-wind', base:8.4,  range:2,   cls:'warn'},
+  'rain': {el:'s-rain', base:1.2,  range:0.5, cls:'ok'},
+  'soil': {el:'s-soil', base:6,    range:1,   cls:'alert'},
+  'erosion':{el:'s-erosion',base:3.8,range:0.4,cls:'warn'},
+  'org':  {el:'s-org',  base:8.1,  range:0.3, cls:'alert'},
+  'ph':   {el:'s-ph',   base:7.8,  range:0.1, cls:'ok'}
+};
+
+setInterval(() => {
+  Object.values(sensors).forEach(s => {
+    const val = (s.base + (Math.random()-0.5)*s.range).toFixed(1);
+    document.getElementById(s.el).textContent = val;
+  });
+}, 3000);
+
+// CHART DEFAULTS
+Chart.defaults.color = '#7a7060';
+Chart.defaults.borderColor = '#1a1e12';
+Chart.defaults.font.family = 'Rajdhani';
+
+const months = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+const years = ['2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'];
+
+// NDVI CHART
+new Chart(document.getElementById('ndviChart'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [{
+      data: [0.22,0.19,0.15,0.10,0.08,0.06,0.08,0.11,0.14,0.16,0.18,0.20],
+      borderColor: '#c8a96e',
+      backgroundColor: 'rgba(200,169,110,0.08)',
+      tension: 0.4, fill: true, pointRadius: 3, pointBackgroundColor: '#c8a96e'
+    },{
+      data: [0.35,0.33,0.28,0.20,0.15,0.12,0.15,0.20,0.24,0.28,0.30,0.33],
+      borderColor: '#4a9fb5',
+      borderDash: [4,4],
+      backgroundColor: 'transparent',
+      tension: 0.4, pointRadius: 0,
+      label: '2020 он'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: '#1a1e12' }, ticks: { font: { size: 10 } } },
+      y: { grid: { color: '#1a1e12' }, min: 0, max: 0.5, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// PREDICTION CHART
+new Chart(document.getElementById('predChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2020','2021','2022','2023','2024','2025','2026*','2027*'],
+    datasets: [{
+      data: [12400, 13800, 15200, 17100, 18600, 20400, 22800, 25200],
+      backgroundColor: (ctx) => ctx.dataIndex >= 6
+        ? 'rgba(224,92,42,0.4)' : 'rgba(200,169,110,0.3)',
+      borderColor: (ctx) => ctx.dataIndex >= 6 ? '#e05c2a' : '#c8a96e',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+      y: { grid: { color: '#1a1e12' }, ticks: { font: { size: 9 } } }
+    }
+  }
+});
+
+// VEGETATION CHART
+new Chart(document.getElementById('vegChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Цөлжсөн','Хагас цөл','Хээр','Ой, нуга'],
+    datasets: [{
+      data: [31, 28, 27, 14],
+      backgroundColor: ['rgba(184,74,44,0.7)','rgba(212,160,42,0.6)','rgba(74,159,181,0.5)','rgba(61,122,69,0.6)'],
+      borderColor: '#141710', borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8 } } }
+  }
+});
+
+// TREND CHARTS
+new Chart(document.getElementById('tempChart'), {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: [{
+      label: 'Дундаж',
+      data: [7.2,7.8,8.1,8.4,8.9,9.2,9.6,10.1,10.8,11.2,11.8],
+      borderColor: '#e05c2a',
+      backgroundColor: 'rgba(224,92,42,0.08)',
+      tension: 0.4, fill: true, pointRadius: 2
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:'#1a1e12'},ticks:{font:{size:9}}},y:{grid:{color:'#1a1e12'},ticks:{font:{size:9}}}}
+  }
+});
+
+new Chart(document.getElementById('rainChart'), {
+  type: 'bar',
+  data: {
+    labels: years,
+    datasets: [{
+      data: [210,195,180,168,155,148,142,135,128,120,115],
+      backgroundColor: 'rgba(74,159,181,0.4)',
+      borderColor: '#4a9fb5', borderWidth: 1
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:9}}},y:{grid:{color:'#1a1e12'},ticks:{font:{size:9}}}}
+  }
+});
+
+new Chart(document.getElementById('stormChart'), {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: [{
+      data: [8,10,12,14,18,22,26,30,35,40,46],
+      borderColor: '#d4a02a',
+      backgroundColor: 'rgba(212,160,42,0.08)',
+      tension: 0.3, fill: true, pointRadius: 3, pointBackgroundColor: '#d4a02a'
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:'#1a1e12'},ticks:{font:{size:9}}},y:{grid:{color:'#1a1e12'},ticks:{font:{size:9}}}}
+  }
+});
+
+new Chart(document.getElementById('soilChart'), {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: [{
+      data: [42,40,37,34,30,27,24,20,17,14,11],
+      borderColor: '#7a8c3c',
+      backgroundColor: 'rgba(122,140,60,0.08)',
+      tension: 0.4, fill: true, pointRadius: 2
+    }]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:'#1a1e12'},ticks:{font:{size:9}}},y:{grid:{color:'#1a1e12'},ticks:{font:{size:9}}}}
+  }
+});
+
+// TAB SWITCHING
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ZONE DATA
+const zoneData = {
+  'Өмнөговь':    { temp:34.2, hum:12, wind:8.4, rain:1.2, soil:6,  erosion:3.8, org:8.1, ph:7.8 },
+  'Дорноговь':   { temp:31.6, hum:15, wind:7.1, rain:1.8, soil:9,  erosion:3.1, org:9.4, ph:7.6 },
+  'Завхан':      { temp:28.4, hum:18, wind:6.8, rain:2.4, soil:12, erosion:2.6, org:11.2,ph:7.4 },
+  'Архангай':    { temp:22.1, hum:32, wind:4.2, rain:4.8, soil:22, erosion:1.4, org:16.8,ph:7.1 },
+  'Хөвсгөл':     { temp:17.3, hum:58, wind:3.1, rain:9.2, soil:38, erosion:0.8, org:28.4,ph:6.8 },
+  'Говьсүмбэр':  { temp:29.8, hum:17, wind:7.6, rain:2.1, soil:11, erosion:2.9, org:10.3,ph:7.5 },
+};
+
+// ZONE SELECT
+function selectZone(el, name) {
+  document.querySelectorAll('.zone-item').forEach(z => z.classList.remove('active'));
+  el.classList.add('active');
+  const d = zoneData[name];
+  if (!d) return;
+  Object.assign(sensors, {
+    'temp':    { ...sensors['temp'],    base: d.temp    },
+    'hum':     { ...sensors['hum'],     base: d.hum     },
+    'wind':    { ...sensors['wind'],    base: d.wind    },
+    'rain':    { ...sensors['rain'],    base: d.rain    },
+    'soil':    { ...sensors['soil'],    base: d.soil    },
+    'erosion': { ...sensors['erosion'], base: d.erosion },
+    'org':     { ...sensors['org'],     base: d.org     },
+    'ph':      { ...sensors['ph'],      base: d.ph      },
+  });
+  // Immediately update display
+  document.getElementById('s-temp').textContent    = d.temp.toFixed(1);
+  document.getElementById('s-hum').textContent     = d.hum.toFixed(1);
+  document.getElementById('s-wind').textContent    = d.wind.toFixed(1);
+  document.getElementById('s-rain').textContent    = d.rain.toFixed(1);
+  document.getElementById('s-soil').textContent    = d.soil.toFixed(1);
+  document.getElementById('s-erosion').textContent = d.erosion.toFixed(1);
+  document.getElementById('s-org').textContent     = d.org.toFixed(1);
+  document.getElementById('s-ph').textContent      = d.ph.toFixed(1);
+}
+
+// AI QUERY
+const aiAnswers = {
+  risk: `🔴 ӨМНӨГОВЬ — ХУРЦАДМАЛ ЭРСДЭЛ
+
+Одоогийн байдал: NDVI индекс 0.08 болж буурсан нь 10 жилийн доод хэмжээ юм. Хөрсний чийгшил 6% — хямралт босоос доош.
+
+АИ дүн шинжилгээ: Машин сургалтын загвар (Random Forest + LSTM) 342 мэдрэгчийн өгөгдлийг боловсруулахад:
+• Дараагийн 30 хоногт цаашид хуурайших магадлал: 87%
+• Элсний шуурга 3–5 хоногт: 71%
+• Ургамлын нэмэлт алдагдал: 12,000 га хүртэл
+
+Зөвлөмж: Яаралтай усалгааны систем идэвхжүүлж, бэлчээрийн хэрэглээг 40%-иар бууруул.`,
+
+  govisumber: `🟡 ГОВЬСҮМБЭР АЙМАГ — ӨНДӨР ЭРСДЭЛИЙН ШИНЖИЛГЭЭ
+
+Ерөнхий мэдээлэл: Говьсүмбэр нь Монголын хамгийн жижиг аймгуудын нэг (5,500 км²) бөгөөд Чойр хот төвтэй. Нутаг дэвсгэрийн 68% нь хагас хуурай тал хээрийн бүсэд оршдог.
+
+АИ мэдрэгчийн дүн (98 станц, Sentinel-2):
+• NDVI индекс: 0.17 — өндөр эрсдэлийн хязгаар
+• Хөрсний чийгшил: 11% — хэвийн хэмжээнээс 34% доогуур
+• Элэгдлийн хурд: 2.9 т/га/жил — нэмэгдэж байна
+• Ургамлын бүрхэвч: 2015 онтой харьцуулахад –22%
+
+Тусгай эрсдэл — Чойрын орчим:
+→ Хуурай өвс нутаг 4,200 га шинээр илэрлээ
+→ Дэд бүтцийн коридор (төмөр зам) хөрсний элэгдэлд нөлөөлж байна
+→ Газрын доорх усны түвшин –1.8 м буурсан (2020–2025)
+
+АИ таамаглал (6 сар):
+• Хур тунадас норм хэтрэхгүй бол NDVI → 0.12 болж унана (магадлал 66%)
+• Бэлчээрийн даац хэтрэлт одоогоор 178% — зохицуулалт шаардлагатай
+
+Зөвлөмж:
+🔴 Чойрын зүүн хэсэгт бэлчээрийн эргэлтийн хуваарь нэвтрүүлэх
+🟡 Саксаул болон хармаг тариалалтыг 3,000 га-д нэмэгдүүлэх
+🟢 Мэдрэгчийн сүлжээг нэмэлт 40 цэгт өргөжүүлэх`,
+
+  ndvi: `📡 NDVI БУУРСАН ШАЛТГААНЫ ШИНЖИЛГЭЭ
+
+Хиймэл дагуулын Sentinel-2 өгөгдлийг CNN загвараар боловсруулсан дүн:
+
+1. Хур тунадасны дутагдал (-38% жилд дунджаас)
+2. Температурын өсөлт (+4.2°C сүүлийн 10 жилд)
+3. Хэт бэлчээрлэлт — малын тоо нормын 210%
+4. Хөрсний органик бодис задрал
+
+NDVI = 0.08 гэдэг нь ургамалгүй газар шахам гэсэн утгатай. Ижил үзүүлэлт 2015 онд 0.35 байсан.`,
+
+  predict: `🔮 6 САРЫН ТААМАГЛАЛ (LSTM нейрон сүлжээ)
+
+АИ загвар 15 жилийн өгөгдөл дээр суралцсан:
+
+Дор.1 (муу хувилбар — магадлал 71%):
+→ Цөлжсөн газар +4,200 га
+→ NDVI 0.05 руу буурна
+→ Элэгдэл 5.2 т/га/жил болно
+
+Дор.2 (дунд хувилбар — магадлал 24%):
+→ Одоогийн байдлаа хадгална
+→ NDVI 0.09–0.12 хооронд хэлбэлзнэ
+
+Дор.3 (сайн хувилбар — магадлал 5%):
+→ Зуны тунадас нэмэгдвэл NDVI 0.15 хүрэх боломж`,
+
+  action: `⚡ ЯАРАЛТАЙ АРГА ХЭМЖЭЭНИЙ ЗӨВЛӨМЖ
+
+АИ системийн тэргүүлэх ажиллагаа:
+
+🔴 Нэн яаралтай (48 цагт):
+• Өмнөговийн 3 аймагт бэлчээрийн хязгаарлалт
+• Гар утасны дохиоллын систем идэвхжүүлэх
+• Усан сангийн нөөцийн шуурхай тооллого
+
+🟡 Ойрын хугацаа (7–30 хоног):
+• Саксаул мод тариалах дунд оновчтой бүс: 15,000 га
+• Хиймэл усалгааны систем: 8 байршил
+• Малчдын нүүдлийн хуваарь оновчтой болгох
+
+🟢 Урт хугацаа (3–12 сар):
+• IoT мэдрэгчийн сүлжээ нэмэгдүүлэх
+• Дрон ашиглан үрийн тарилт`,
+
+  climate: `🌡️ УУР АМЬСГАЛЫН ӨӨРЧЛӨЛТИЙН НӨЛӨӨЛӨЛ
+
+Монголын температур дэлхийн дунджаас 2.1 дахин хурдан нэмэгдэж байна.
+
+АИ корреляцийн шинжилгээ:
+• Температур +1°C → NDVI –0.04 нэгж
+• Хур тунадас –10% → Хөрсний чийг –3.2%
+• Элсний шуурга: 10 жилд 3.8 дахин өссөн
+
+2050 оны проекц (RCP 8.5):
+→ Нийт цөлжилтийн эрсдэлт газар: 78% → 89%
+→ Дундаж температур: +4.7°C нэмэгдэнэ
+→ Жилийн хур тунадас: –25% буурна
+
+Монгол улс Дэлхийн банкны СAZMI индексээр цөлжилтийн хамгийн өндөр эрсдэлт 15 орны нэг.`,
+
+  satellite: `🛰️ ХИЙМЭЛ ДАГУУЛЫН ӨГӨГДЛИЙН ТАЙЛБАР
+
+Sentinel-2 + Landsat-9 нийлмэл шинжилгээ:
+
+Спектрийн үзүүлэлт:
+• NDVI (ургамал): 0.08 — хурцадмал
+• NDWI (ус): –0.42 — хуурай
+• BSI (нүцгэн хөрс): 0.67 — өндөр
+
+CNN загваруудын тодорхойлолт:
+→ 34,200 га нүцгэн хөрсний нэмэлт бүс
+→ 12,800 га шинэ элсэн нутаг
+→ 3 шинэ элсний манхан бүлэглэл илэрлээ
+
+Дараагийн хиймэл дагуулын зураглал: 3 хоногт`
+};
+
+async function runAIQuery() {
+  const sel = document.getElementById('aiQuery').value;
+  if (!sel) return;
+  const btn = document.getElementById('aiBtn');
+  const resp = document.getElementById('aiResponse');
+
+  btn.disabled = true;
+  resp.className = 'ai-response loading';
+  resp.textContent = '';
+
+  // Use direct text answers (simulated streaming)
+  const answer = aiAnswers[sel] || 'Шинжилгээ хийж байна...';
+
+  let i = 0;
+  const timer = setInterval(() => {
+    resp.textContent = answer.slice(0, i);
+    i += 3;
+    if (i > answer.length) {
+      clearInterval(timer);
+      resp.textContent = answer;
+      resp.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }, 20);
+}
+</script>
+</body>
+</html>
